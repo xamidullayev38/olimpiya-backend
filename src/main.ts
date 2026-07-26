@@ -75,7 +75,7 @@ async function bootstrap() {
   // ---------------------------------------------------------------
   // 5) OpenAPI / Swagger Hujjatlashtirish (Phase 8)
   // ---------------------------------------------------------------
-  if (!isProd || config.get('ENABLE_SWAGGER') === 'true') {
+  if (!isProd || config.get('ENABLE_SWAGGER') === 'true' || process.env.ENABLE_SWAGGER === 'true') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Olimpiya Backend Admin API')
       .setDescription(

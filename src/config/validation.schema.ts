@@ -11,6 +11,7 @@ export const validationSchema = Joi.object({
   PORT: Joi.number().default(3000),
   API_PREFIX: Joi.string().default('api'),
   CORS_ORIGINS: Joi.string().allow('').default(''),
+  ENABLE_SWAGGER: Joi.string().optional().default('false'),
 
   DATABASE_URL: Joi.string().required(),
   REDIS_URL: Joi.string().optional(),
