@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -40,8 +40,15 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getMe(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.getMe(user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('change-password')
   changePassword(@CurrentUser() user: AuthenticatedUser, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.userId, dto);
   }
 }
+

@@ -205,6 +205,27 @@ export class AuthService {
     return { success: true };
   }
 
+  async getMe(userId: string) {
+    const user = await this.usersRepo.findById(userId);
+    if (!user) throw new UnauthorizedException('Foydalanuvchi topilmadi');
+
+    const roles = user.roles.map((r) => r.role.name);
+    const permissions = Array.from(
+      new Set(user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+    );
+
+    return {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email,
+      roles,
+      permissions,
+      mustChangePassword: user.mustChangePassword,
+      createdAt: user.createdAt,
+    };
+  }
+
   private addDuration(date: Date, duration: string): Date {
     const match = duration.match(/^(\d+)([smhd])$/);
     if (!match) return new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
