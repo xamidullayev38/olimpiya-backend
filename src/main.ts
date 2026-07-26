@@ -23,13 +23,13 @@ async function bootstrap() {
   app.use(
     helmet({
       contentSecurityPolicy: isProd ? undefined : false,
-      crossOriginResourcePolicy: { policy: 'same-site' },
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       hsts: isProd ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
     }),
   );
 
   // ---------------------------------------------------------------
-  // 2) CORS - whitelist qilingan originlar
+  // 2) CORS - whitelist qilingan originlar + vercel support
   // ---------------------------------------------------------------
   const allowedOrigins = (config.get<string>('CORS_ORIGINS') || '')
     .split(',')
@@ -38,14 +38,22 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
         callback(null, true);
       } else {
-        callback(new Error('CORS: ruxsat etilmagan origin'), false);
+        callback(null, false);
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   });
 
   app.use(compression());
@@ -73,9 +81,9 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // ---------------------------------------------------------------
-  // 5) OpenAPI / Swagger Hujjatlashtirish (Phase 8)
+  // 5) OpenAPI / Swagger Hujjatlashtirish
   // ---------------------------------------------------------------
-  if (!isProd || config.get('ENABLE_SWAGGER') === 'true' || process.env.ENABLE_SWAGGER === 'true') {
+  if (!isProd || config.get('ENABLE_SWAGGER') === 'true') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('Olimpiya Backend Admin API')
       .setDescription(
