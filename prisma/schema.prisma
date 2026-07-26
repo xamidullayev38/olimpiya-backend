@@ -1,0 +1,363 @@
+// ============================================================================
+// QR Badge Tizimi — Prisma Data Model
+// Musobaqa ishtirokchilarini akkreditatsiya, zona kirish va ovqatlanish nazorati
+// ============================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------------
+
+enum BadgeStatus {
+  ACTIVE
+  BLOCKED
+  EXPIRED
+}
+
+enum Direction {
+  IN
+  OUT
+}
+
+enum ScanResultStatus {
+  GRANTED
+  DENIED
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+}
+
+enum DeviceStatus {
+  ACTIVE
+  REVOKED
+}
+
+// ------------------------------------------------------------------
+// TIZIM FOYDALANUVCHILARI (STAFF) + RBAC
+// ------------------------------------------------------------------
+
+model SystemUser {
+  id                String    @id @default(uuid())
+  fullName          String
+  username          String    @unique
+  email             String?   @unique
+  passwordHash      String
+  isActive          Boolean   @default(true)
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime?
+  mustChangePassword Boolean  @default(false)
+  passwordChangedAt DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  roles             UserRole[]
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+  scannedAccessLogs AccessLog[]      @relation("ScannedByUser")
+  scannedMealLogs   MealLog[]        @relation("ScannedByUserMeal")
+  createdParticipants Participant[]  @relation("CreatedByUser")
+  devices           Device[]         @relation("DeviceAssignedTo")
+
+  @@index([username])
+  @@map("system_users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique // masalan: SUPER_ADMIN, OPERATOR, ZONE_MANAGER, SCANNER, KITCHEN_STAFF, ANALYST
+  description String?
+  isSystem    Boolean  @default(false) // tizim ichidagi asosiy rollar o'chirilishi mumkin emas
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique // masalan: participant.create, badge.print, report.export
+  description String?
+  module      String   // guruhlash uchun: participants, zones, badges, reports...
+
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String
+  user        SystemUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    // faqat hash saqlanadi, xom token emas
+  replacedBy  String?
+  revokedAt   DateTime?
+  expiresAt   DateTime
+  createdByIp String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ------------------------------------------------------------------
+// AKKREDITATSIYA TURI (KATEGORIYA)
+// ------------------------------------------------------------------
+
+model AccreditationType {
+  id            String   @id @default(uuid())
+  name          String   @unique // Sportchi, Murabbiy, Hakam, Volontyor, Jurnalist, VIP mehmon...
+  code          String   @unique // SPORTCHI, MURABBIY...
+  color         String   @default("#2563eb")
+  badgeIconUrl  String?
+  mealAllowed   Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  participants     Participant[]
+  zoneAccess       ZoneAccessRule[]
+  mealSchedules    MealScheduleAccreditation[]
+
+  @@map("accreditation_types")
+}
+
+// ------------------------------------------------------------------
+// ZONA / BINO
+// ------------------------------------------------------------------
+
+model Zone {
+  id                String   @id @default(uuid())
+  name              String
+  code              String   @unique // MPC, OC, VIP, RESTORAN...
+  requiresAccessControl Boolean @default(true)
+  description       String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  accessRules       ZoneAccessRule[]
+  accessLogs        AccessLog[]
+  devices           Device[]
+
+  @@map("zones")
+}
+
+model ZoneAccessRule {
+  id                  String            @id @default(uuid())
+  zoneId              String
+  accreditationTypeId String
+  zone                Zone              @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  accreditationType   AccreditationType @relation(fields: [accreditationTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, accreditationTypeId])
+  @@map("zone_access_rules")
+}
+
+// ------------------------------------------------------------------
+// OVQATLANISH JADVALI
+// ------------------------------------------------------------------
+
+model MealSchedule {
+  id          String   @id @default(uuid())
+  date        DateTime @db.Date
+  mealType    MealType
+  startTime   DateTime // faqat vaqt qismi ishlatiladi (UTC vaqt sifatida saqlanadi, sana `date` bilan solishtiriladi)
+  endTime     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  allowedTypes MealScheduleAccreditation[]
+  mealLogs     MealLog[]
+
+  @@unique([date, mealType])
+  @@map("meal_schedules")
+}
+
+model MealScheduleAccreditation {
+  mealScheduleId      String
+  accreditationTypeId String
+  mealSchedule        MealSchedule      @relation(fields: [mealScheduleId], references: [id], onDelete: Cascade)
+  accreditationType   AccreditationType @relation(fields: [accreditationTypeId], references: [id], onDelete: Cascade)
+
+  @@id([mealScheduleId, accreditationTypeId])
+  @@map("meal_schedule_accreditations")
+}
+
+// ------------------------------------------------------------------
+// ISHTIROKCHI (PARTICIPANT)
+// ------------------------------------------------------------------
+
+model Participant {
+  id                  String       @id @default(uuid())
+  firstName           String
+  lastName            String
+  middleName          String?
+  photoUrl            String?
+  pinflEncrypted       String?     // PINFL shifrlangan holda saqlanadi (AES-256-GCM, application layer)
+  pinflLast4          String?      // qidiruv/ko'rsatish uchun faqat oxirgi 4 raqam ochiq
+  birthDate           DateTime?    @db.Date
+  documentNumber      String?
+  phone               String?
+  organization         String?
+  region              String?
+  sportType           String?
+
+  accreditationTypeId String
+  accreditationType   AccreditationType @relation(fields: [accreditationTypeId], references: [id])
+
+  badgeStatus         BadgeStatus  @default(ACTIVE)
+  badgeExpiresAt      DateTime?
+  qrTokenId           String       @unique @default(uuid()) // QR ichida shu ID token sifatida imzolanadi (shaxsiy ma'lumot emas)
+  qrTokenVersion      Int          @default(1) // badge qayta chiqarilganda oshiriladi -> eski QR avtomatik yaroqsiz bo'ladi
+
+  createdById         String?
+  createdBy           SystemUser?  @relation("CreatedByUser", fields: [createdById], references: [id])
+
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  accessLogs          AccessLog[]
+  mealLogs            MealLog[]
+
+  @@index([accreditationTypeId])
+  @@index([badgeStatus])
+  @@index([documentNumber])
+  @@index([lastName])
+  @@map("participants")
+}
+
+// ------------------------------------------------------------------
+// KIRISH TARIXI (ACCESS LOG)
+// ------------------------------------------------------------------
+
+model AccessLog {
+  id             String            @id @default(uuid())
+  participantId  String?
+  participant    Participant?      @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  zoneId         String
+  zone           Zone              @relation(fields: [zoneId], references: [id])
+  direction      Direction
+  result         ScanResultStatus
+  denyReason     String?
+  scannedAt      DateTime          @default(now())
+  deviceId       String?
+  device         Device?           @relation(fields: [deviceId], references: [id])
+  scannedByUserId String?
+  scannedByUser  SystemUser?       @relation("ScannedByUser", fields: [scannedByUserId], references: [id])
+  clientEventId  String?           @unique // offline sinxronizatsiyada dublikatlarni oldini olish uchun (mobil qurilma tomonidan generatsiya qilinadi)
+  syncedAt       DateTime?         // agar offline yozilgan bo'lsa, serverga qachon yetib kelgani
+
+  @@index([participantId])
+  @@index([zoneId, scannedAt])
+  @@index([deviceId, scannedAt])
+  @@index([scannedAt])
+  @@map("access_logs")
+}
+
+// ------------------------------------------------------------------
+// OVQATLANISH TARIXI (MEAL LOG)
+// ------------------------------------------------------------------
+
+model MealLog {
+  id              String           @id @default(uuid())
+  participantId   String?
+  participant     Participant?     @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  mealScheduleId  String
+  mealSchedule    MealSchedule     @relation(fields: [mealScheduleId], references: [id])
+  result          ScanResultStatus
+  denyReason      String?
+  scannedAt       DateTime         @default(now())
+  deviceId        String?
+  device          Device?          @relation(fields: [deviceId], references: [id])
+  scannedByUserId String?
+  scannedByUser   SystemUser?      @relation("ScannedByUserMeal", fields: [scannedByUserId], references: [id])
+  clientEventId   String?          @unique
+  syncedAt        DateTime?
+
+  @@index([participantId, mealScheduleId])
+  @@index([deviceId, scannedAt])
+  @@index([scannedAt])
+  @@map("meal_logs")
+}
+
+// ------------------------------------------------------------------
+// SKANER QURILMALARI (DEVICE AUTH)
+// ------------------------------------------------------------------
+
+model Device {
+  id               String       @id @default(uuid())
+  name             String
+  deviceKeyHash    String       @unique // qurilmaning maxfiy kaliti hash holida
+  status           DeviceStatus @default(ACTIVE)
+  currentZoneId    String?
+  currentZone      Zone?        @relation(fields: [currentZoneId], references: [id])
+  assignedToUserId String?
+  assignedToUser   SystemUser?  @relation("DeviceAssignedTo", fields: [assignedToUserId], references: [id])
+  lastSeenAt       DateTime?
+  lastSeenIp       String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  accessLogs       AccessLog[]
+  mealLogs         MealLog[]
+
+  @@map("devices")
+}
+
+// ------------------------------------------------------------------
+// AUDIT LOG (ADMIN AMALLARI)
+// ------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       SystemUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // masalan: participant.create, role.permissions.update
+  entityType String?
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
