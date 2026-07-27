@@ -202,7 +202,27 @@ export class AuthService {
     });
 
     await this.revokeAllUserTokens(userId);
-    return { success: true };
+
+    const roles = user.roles.map((r) => r.role.name);
+    const permissions = Array.from(
+      new Set(user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+    );
+
+    const tokens = await this.issueTokens(user.id, user.username, roles, permissions, {});
+
+    return {
+      success: true,
+      ...tokens,
+      user: {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        email: user.email,
+        roles,
+        permissions,
+        mustChangePassword: false,
+      },
+    };
   }
 
   async getMe(userId: string) {
