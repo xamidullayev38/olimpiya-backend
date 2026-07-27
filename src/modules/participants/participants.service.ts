@@ -64,7 +64,15 @@ export class ParticipantsService {
     const pageSize = Math.min(Math.max(parseInt(query.pageSize || '20', 10), 1), 200);
 
     const where: any = {};
-    if (query.accreditationTypeId) where.accreditationTypeId = query.accreditationTypeId;
+    if (query.accreditationTypeId && query.accreditationTypeId !== 'ALL') {
+      where.accreditationTypeId = query.accreditationTypeId;
+    }
+    if (query.accreditation && query.accreditation !== 'ALL') {
+      where.OR = [
+        { accreditationTypeId: query.accreditation },
+        { accreditationType: { code: query.accreditation } },
+      ];
+    }
     if (query.badgeStatus) where.badgeStatus = query.badgeStatus;
     if (query.search) {
       where.OR = [

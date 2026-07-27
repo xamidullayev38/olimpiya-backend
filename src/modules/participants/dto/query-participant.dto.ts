@@ -10,6 +10,10 @@ export class QueryParticipantDto {
   accreditationTypeId?: string;
 
   @IsOptional()
+  @IsString()
+  accreditation?: string;
+
+  @IsOptional()
   @IsIn(['ACTIVE', 'BLOCKED', 'EXPIRED'])
   badgeStatus?: string;
 
