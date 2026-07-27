@@ -13,6 +13,7 @@ export interface BadgeItemData {
   category: string;
   color: string;
   organization: string;
+  photoUrl?: string;
   token: string;
 }
 
@@ -41,6 +42,7 @@ export class BadgePdfGeneratorService {
         category: item.category,
         color: item.color,
         organization: item.organization,
+        photoUrl: item.photoUrl,
         qrBuffer,
       });
     }
@@ -56,40 +58,61 @@ export class BadgePdfGeneratorService {
 
   private drawBadgeTemplate(
     doc: PDFKit.PDFDocument,
-    data: { fullName: string; category: string; color: string; organization: string; qrBuffer: Buffer },
+    data: { fullName: string; category: string; color: string; organization: string; photoUrl?: string; qrBuffer: Buffer },
   ) {
     // Yuqori rangli panel (kategoriya rangi)
-    doc.rect(0, 0, CARD_WIDTH, 70).fill(data.color);
+    doc.rect(0, 0, CARD_WIDTH, 60).fill(data.color);
     doc
       .fillColor('#ffffff')
-      .fontSize(16)
+      .fontSize(15)
       .font('Helvetica-Bold')
-      .text(data.category.toUpperCase(), 12, 26, { width: CARD_WIDTH - 24, align: 'center' });
+      .text(data.category.toUpperCase(), 12, 22, { width: CARD_WIDTH - 24, align: 'center' });
+
+    // Ishtirokchi rasmi yoki avatar ramkasi
+    const avatarWidth = 60;
+    const avatarHeight = 70;
+    const avatarX = (CARD_WIDTH - avatarWidth) / 2;
+    const avatarY = 70;
+
+    let photoLoaded = false;
+    if (data.photoUrl && fs.existsSync(data.photoUrl)) {
+      try {
+        doc.image(data.photoUrl, avatarX, avatarY, { width: avatarWidth, height: avatarHeight });
+        photoLoaded = true;
+      } catch {
+        // quiet fallback
+      }
+    }
+
+    if (!photoLoaded) {
+      doc.rect(avatarX, avatarY, avatarWidth, avatarHeight).fillAndStroke('#e5e7eb', '#d1d5db');
+      doc.fillColor('#9ca3af').fontSize(24).font('Helvetica-Bold').text('PHOTO', avatarX, avatarY + 25, { width: avatarWidth, align: 'center' });
+    }
 
     // F.I.Sh
     doc
       .fillColor('#111111')
-      .fontSize(15)
+      .fontSize(14)
       .font('Helvetica-Bold')
-      .text(data.fullName, 12, 90, { width: CARD_WIDTH - 24, align: 'center' });
+      .text(data.fullName, 12, 150, { width: CARD_WIDTH - 24, align: 'center' });
 
     if (data.organization) {
       doc
         .fillColor('#555555')
         .fontSize(10)
         .font('Helvetica')
-        .text(data.organization, 12, 115, { width: CARD_WIDTH - 24, align: 'center' });
+        .text(data.organization, 12, 170, { width: CARD_WIDTH - 24, align: 'center' });
     }
 
     // QR kod markazda
-    const qrSize = 170;
-    doc.image(data.qrBuffer, (CARD_WIDTH - qrSize) / 2, 150, { width: qrSize, height: qrSize });
+    const qrSize = 150;
+    doc.image(data.qrBuffer, (CARD_WIDTH - qrSize) / 2, 190, { width: qrSize, height: qrSize });
 
     // Pastki chiziq
     doc
       .fillColor('#999999')
       .fontSize(8)
-      .text('Ushbu badge shaxsiyatni tasdiqlovchi hujjat emas', 12, CARD_HEIGHT - 30, {
+      .text('Ushbu badge shaxsiyatni tasdiqlovchi hujjat emas', 12, CARD_HEIGHT - 25, {
         width: CARD_WIDTH - 24,
         align: 'center',
       });

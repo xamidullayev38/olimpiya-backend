@@ -71,6 +71,7 @@ export class BadgesService {
         category: p.accreditationType.name,
         color: p.accreditationType.color,
         organization: p.organization || '',
+        photoUrl: p.photoUrl || undefined,
         token,
       });
     }

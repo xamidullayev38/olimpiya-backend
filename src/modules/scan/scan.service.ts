@@ -9,6 +9,7 @@ import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repositor
 import { DeviceRepository } from '../devices/repositories/devices.repository';
 import { ParticipantsRepository } from '../participants/repositories/participants.repository';
 import { MealScheduleRepository } from '../meal-schedule/repositories/meal-schedule.repository';
+import { DashboardGateway } from '../dashboard/dashboard.gateway';
 
 interface ScanContext {
   deviceId: string;
@@ -24,6 +25,7 @@ export class ScanService {
     private mealScheduleRepo: MealScheduleRepository,
     private qrTokenService: QrTokenService,
     private mealScheduleService: MealScheduleService,
+    private dashboardGateway: DashboardGateway,
   ) {}
 
   // ------------------------------------------------------------------
@@ -113,6 +115,7 @@ export class ScanService {
         clientEventId: dto.clientEventId,
         syncedAt: dto.scannedAt ? new Date() : undefined,
       });
+      this.dashboardGateway.broadcastStats().catch(() => {});
       return this.toAccessResponse(log, false);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002' && dto.clientEventId) {
@@ -216,7 +219,12 @@ export class ScanService {
     const alreadyTaken = await this.mealLogRepo.findFirstGranted(participant.id, schedule.id);
 
     if (alreadyTaken) {
-      const time = alreadyTaken.scannedAt.toISOString().substring(11, 16);
+      const time = alreadyTaken.scannedAt.toLocaleTimeString('uz-UZ', {
+        timeZone: 'Asia/Tashkent',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
       return this.persistMealDeny(
         schedule.id,
         dto,
@@ -251,6 +259,7 @@ export class ScanService {
         clientEventId: dto.clientEventId,
         syncedAt: dto.scannedAt ? new Date() : undefined,
       });
+      this.dashboardGateway.broadcastStats().catch(() => {});
       return this.toMealResponseFromLog(log, false);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002' && dto.clientEventId) {

@@ -31,4 +31,15 @@ export class AccessLogsController {
     });
     res.send(buffer);
   }
+
+  @RequirePermissions('report.export')
+  @Get('export/pdf')
+  async exportPdf(@Query() query: AccessLogQuery, @Res() res: Response) {
+    const buffer = await this.service.exportPdf(query);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="access-logs.pdf"',
+    });
+    res.send(buffer);
+  }
 }

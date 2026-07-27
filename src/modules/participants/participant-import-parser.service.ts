@@ -74,10 +74,30 @@ export class ParticipantImportParserService {
   }
 
   private normalizeRow(row: Record<string, any>): ParsedParticipantRow {
+    let firstName = row.firstName || row.first_name || '';
+    let lastName = row.lastName || row.last_name || '';
+    let middleName = row.middleName || row.middle_name || undefined;
+
+    const rawFullName = row['F.I.Sh'] || row['f.i.sh'] || row.fullName || row.full_name || row['FIO'] || row['fio'];
+    if (rawFullName && (!firstName || !lastName)) {
+      const parts = String(rawFullName).trim().split(/\s+/);
+      if (parts.length === 1) {
+        firstName = parts[0];
+        lastName = '—';
+      } else if (parts.length === 2) {
+        lastName = parts[0];
+        firstName = parts[1];
+      } else if (parts.length >= 3) {
+        lastName = parts[0];
+        firstName = parts[1];
+        middleName = parts.slice(2).join(' ');
+      }
+    }
+
     return {
-      firstName: row.firstName || row.first_name || row['F.I.Sh'] || '',
-      lastName: row.lastName || row.last_name || '',
-      middleName: row.middleName || row.middle_name || undefined,
+      firstName,
+      lastName,
+      middleName,
       pinfl: row.pinfl ? String(row.pinfl).trim() : undefined,
       birthDate: row.birthDate || row.birth_date || undefined,
       documentNumber: row.documentNumber || row.document_number || undefined,

@@ -4,6 +4,7 @@ import { ScanService } from './scan.service';
 import { ScanController } from './scan.controller';
 import { BadgesModule } from '../badges/badges.module';
 import { MealScheduleModule } from '../meal-schedule/meal-schedule.module';
+import { DashboardModule } from '../dashboard/dashboard.module';
 import { AccessLogRepository } from '../access-logs/repositories/access-logs.repository';
 import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repository';
 import { DeviceRepository } from '../devices/repositories/devices.repository';
@@ -11,7 +12,7 @@ import { ParticipantsRepository } from '../participants/repositories/participant
 import { MealScheduleRepository } from '../meal-schedule/repositories/meal-schedule.repository';
 
 @Module({
-  imports: [JwtModule.register({}), BadgesModule, MealScheduleModule],
+  imports: [JwtModule.register({}), BadgesModule, MealScheduleModule, DashboardModule],
   providers: [
     ScanService,
     AccessLogRepository,

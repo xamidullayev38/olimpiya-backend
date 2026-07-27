@@ -31,4 +31,15 @@ export class MealLogsController {
     });
     res.send(buffer);
   }
+
+  @RequirePermissions('report.export')
+  @Get('export/pdf')
+  async exportPdf(@Query() query: MealLogQuery, @Res() res: Response) {
+    const buffer = await this.service.exportPdf(query);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="meal-logs.pdf"',
+    });
+    res.send(buffer);
+  }
 }
