@@ -50,6 +50,15 @@ export class ParticipantsService {
     if (!accreditationType) throw new BadRequestException('Akkreditatsiya turi topilmadi');
 
     const { pinfl, birthDate, accreditationTypeId, ...rest } = dto;
+    
+    if (rest.documentNumber) {
+      const existingDoc = await this.participantsRepo.findMany({ documentNumber: rest.documentNumber });
+      if (existingDoc.length > 0) throw new BadRequestException('Ushbu hujjat raqamiga ega ishtirokchi allaqachon mavjud');
+    } else {
+      const existingName = await this.participantsRepo.findMany({ firstName: rest.firstName, lastName: rest.lastName });
+      if (existingName.length > 0) throw new BadRequestException('Ushbu ism va familiyaga ega ishtirokchi allaqachon mavjud');
+    }
+
     const { pinflEncrypted, pinflLast4 } = this.encryptPinfl(pinfl);
 
     return this.participantsRepo.create({
@@ -181,6 +190,13 @@ export class ParticipantsService {
         const { pinflEncrypted, pinflLast4 } = this.encryptPinfl(row.pinfl);
 
         const participant = await this.prisma.$transaction(async (tx) => {
+          if (row.documentNumber) {
+            const existingDoc = await tx.participant.findFirst({ where: { documentNumber: row.documentNumber } });
+            if (existingDoc) throw new Error('Ushbu hujjat raqamiga ega ishtirokchi allaqachon mavjud');
+          } else {
+            const existingName = await tx.participant.findFirst({ where: { firstName: row.firstName, lastName: row.lastName } });
+            if (existingName) throw new Error('Ushbu ism va familiyaga ega ishtirokchi allaqachon mavjud');
+          }
           return tx.participant.create({
             data: {
               firstName: row.firstName,
