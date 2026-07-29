@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Delete, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -50,5 +50,12 @@ export class UsersController {
   @Post(':id/deactivate')
   deactivate(@Param('id') id: string) {
     return this.usersService.deactivate(id);
+  }
+
+  @RequirePermissions('user.manage')
+  @AuditAction('user.delete')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.usersService.delete(id);
   }
 }

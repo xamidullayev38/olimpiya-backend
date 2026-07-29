@@ -63,4 +63,10 @@ export class ParticipantsRepository {
       data: { qrTokenVersion: { increment: 1 } },
     });
   }
+
+  async delete(id: string) {
+    return this.prisma.participant.delete({
+      where: { id },
+    });
+  }
 }

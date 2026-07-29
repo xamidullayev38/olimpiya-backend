@@ -84,6 +84,18 @@ export class UsersService {
     return { success: true };
   }
 
+  async delete(id: string) {
+    await this.findOne(id);
+    try {
+      return await this.usersRepo.delete(id);
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new ConflictException('Ushbu foydalanuvchiga tegishli tarixiy ma\'lumotlar mavjud bo\'lganligi sababli o\'chirib bo\'lmaydi');
+      }
+      throw e;
+    }
+  }
+
   private generateTempPassword(): string {
     return randomBytes(9).toString('base64').replace(/[+/=]/g, '') + '_A1!';
   }

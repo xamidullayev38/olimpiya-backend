@@ -59,4 +59,8 @@ export class UsersRepository {
       });
     });
   }
+
+  async delete(id: string) {
+    return this.prisma.systemUser.delete({ where: { id } });
+  }
 }

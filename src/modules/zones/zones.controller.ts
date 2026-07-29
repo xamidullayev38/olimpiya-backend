@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Delete, UseGuards } from '@nestjs/common';
 import { ZonesService } from './zones.service';
 import { CreateZoneDto } from './dto/create-zone.dto';
 import { UpdateZoneDto } from './dto/update-zone.dto';
@@ -49,5 +49,12 @@ export class ZonesController {
   @Post(':id/deactivate')
   deactivate(@Param('id') id: string) {
     return this.service.deactivate(id);
+  }
+
+  @RequirePermissions('zone.manage')
+  @AuditAction('zone.delete')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.service.delete(id);
   }
 }

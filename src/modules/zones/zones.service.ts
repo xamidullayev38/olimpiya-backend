@@ -37,6 +37,18 @@ export class ZonesService {
     return this.zoneRepo.update(id, { isActive: false });
   }
 
+  async delete(id: string) {
+    await this.findOne(id);
+    try {
+      return await this.zoneRepo.delete(id);
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new ConflictException('Ushbu zonaga tegishli tarixiy ma\'lumotlar mavjud bo\'lganligi sababli o\'chirib bo\'lmaydi');
+      }
+      throw e;
+    }
+  }
+
   // Zonadagi joriy odamlar sonini hisoblash (kirish - chiqish) - FT-21
   async getCurrentOccupancy(zoneId: string) {
     await this.findOne(zoneId);

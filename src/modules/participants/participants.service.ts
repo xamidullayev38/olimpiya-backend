@@ -148,6 +148,18 @@ export class ParticipantsService {
     return this.participantsRepo.updateBadgeStatus(id, 'ACTIVE');
   }
 
+  async delete(id: string) {
+    await this.findOne(id);
+    try {
+      return await this.participantsRepo.delete(id);
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new BadRequestException('Ushbu ishtirokchiga tegishli tarixiy ma\'lumotlar mavjud bo\'lganligi sababli o\'chirib bo\'lmaydi');
+      }
+      throw e;
+    }
+  }
+
   /**
    * FT-1: Excel/CSV orqali ommaviy import (Phase 3: Transaction & Validation).
    */

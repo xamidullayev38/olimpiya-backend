@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Delete,
   Query,
   UploadedFile,
   UseGuards,
@@ -99,5 +100,12 @@ export class ParticipantsController {
   @Post(':id/unblock')
   unblock(@Param('id') id: string) {
     return this.service.unblock(id);
+  }
+
+  @RequirePermissions('participant.delete')
+  @AuditAction('participant.delete')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.service.delete(id);
   }
 }
