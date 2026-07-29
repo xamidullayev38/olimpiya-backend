@@ -53,7 +53,11 @@ export class ParticipantImportParserService {
       worksheet.eachRow((row, rowNumber) => {
         const values = row.values as any[];
         // ExcelJS row.values is 1-indexed (index 0 is undefined)
-        const rowData = values.slice(1).map((v) => (v !== null && v !== undefined ? String(v).trim() : ''));
+        const rowData = values.slice(1).map((v) => {
+          if (v === null || v === undefined) return '';
+          if (v instanceof Date) return v.toISOString().split('T')[0]; // YYYY-MM-DD
+          return String(v).trim();
+        });
 
         if (rowNumber === 1) {
           headers = rowData;

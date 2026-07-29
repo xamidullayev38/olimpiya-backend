@@ -43,10 +43,13 @@ export class ParticipantsService {
   }
 
   async create(dto: CreateParticipantDto, createdById?: string) {
-    const accreditationType = await this.accreditationTypeRepo.findById(dto.accreditationTypeId);
+    // accreditationTypeId sifatida UUID yoki CODE berilishi mumkin
+    const accreditationType =
+      (await this.accreditationTypeRepo.findById(dto.accreditationTypeId)) ??
+      (await this.accreditationTypeRepo.findByCode(dto.accreditationTypeId.toUpperCase()));
     if (!accreditationType) throw new BadRequestException('Akkreditatsiya turi topilmadi');
 
-    const { pinfl, birthDate, ...rest } = dto;
+    const { pinfl, birthDate, accreditationTypeId, ...rest } = dto;
     const { pinflEncrypted, pinflLast4 } = this.encryptPinfl(pinfl);
 
     return this.participantsRepo.create({
@@ -55,7 +58,7 @@ export class ParticipantsService {
       pinflEncrypted,
       pinflLast4,
       createdBy: createdById ? { connect: { id: createdById } } : undefined,
-      accreditationType: { connect: { id: dto.accreditationTypeId } },
+      accreditationType: { connect: { id: accreditationType.id } },
     });
   }
 
@@ -68,19 +71,25 @@ export class ParticipantsService {
       where.accreditationTypeId = query.accreditationTypeId;
     }
     if (query.accreditation && query.accreditation !== 'ALL') {
-      where.OR = [
-        { accreditationTypeId: query.accreditation },
-        { accreditationType: { code: query.accreditation } },
-      ];
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { accreditationTypeId: query.accreditation },
+          { accreditationType: { code: query.accreditation } },
+        ],
+      });
     }
     if (query.badgeStatus) where.badgeStatus = query.badgeStatus;
     if (query.search) {
-      where.OR = [
-        { firstName: { contains: query.search, mode: 'insensitive' } },
-        { lastName: { contains: query.search, mode: 'insensitive' } },
-        { documentNumber: { contains: query.search, mode: 'insensitive' } },
-        { organization: { contains: query.search, mode: 'insensitive' } },
-      ];
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { firstName: { contains: query.search, mode: 'insensitive' } },
+          { lastName: { contains: query.search, mode: 'insensitive' } },
+          { documentNumber: { contains: query.search, mode: 'insensitive' } },
+          { organization: { contains: query.search, mode: 'insensitive' } },
+        ],
+      });
     }
 
     const [items, total] = await Promise.all([
