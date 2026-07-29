@@ -17,7 +17,7 @@ export class UsersService {
     const existing = await this.usersRepo.findByUsername(dto.username);
     if (existing) throw new ConflictException('Bu username allaqachon band');
 
-    const temporaryPassword = this.generateTempPassword();
+    const temporaryPassword = dto.password || this.generateTempPassword();
     const passwordHash = await argon2.hash(temporaryPassword);
 
     const user = await this.usersRepo.create({
