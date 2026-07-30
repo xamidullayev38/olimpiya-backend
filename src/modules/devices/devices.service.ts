@@ -24,10 +24,10 @@ export class DevicesService {
 
   /**
    * Admin tomonidan yangi skaner qurilma ro'yxatga olinadi.
-   * Xom deviceKey FAQAT shu javobda bir marta qaytariladi - keyin qayta ko'rsatilmaydi (faqat hash saqlanadi).
+   * Xom deviceKey FAQAT shu javobda bir marta qaytariladi (yoki admin kiritgani ishlatiladi)
    */
   async create(dto: CreateDeviceDto) {
-    const rawKey = randomBytes(24).toString('base64url');
+    const rawKey = dto.deviceKey || randomBytes(24).toString('base64url');
     const deviceKeyHash = await argon2.hash(rawKey);
 
     const device = await this.deviceRepo.create({
@@ -39,10 +39,30 @@ export class DevicesService {
     return { deviceId: device.id, name: device.name, deviceKey: rawKey };
   }
 
+  async update(id: string, dto: import('./dto/update-device.dto').UpdateDeviceDto) {
+    const device = await this.deviceRepo.findById(id);
+    if (!device) throw new NotFoundException('Qurilma topilmadi');
+
+    const updateData: any = {};
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.deviceKey !== undefined && dto.deviceKey.trim() !== "") {
+      updateData.deviceKeyHash = await argon2.hash(dto.deviceKey);
+    }
+
+    return this.deviceRepo.update(id, updateData);
+  }
+
   async revoke(id: string) {
     const device = await this.deviceRepo.findById(id);
     if (!device) throw new NotFoundException('Qurilma topilmadi');
     return this.deviceRepo.update(id, { status: DeviceStatus.REVOKED });
+  }
+
+  async delete(id: string) {
+    const device = await this.deviceRepo.findById(id);
+    if (!device) throw new NotFoundException('Qurilma topilmadi');
+    return this.deviceRepo.delete(id);
   }
 
   /**

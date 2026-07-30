@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Delete, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
+import { UpdateDeviceDto } from './dto/update-device.dto';
 import { DeviceLoginDto } from './dto/device-login.dto';
 import { SelectZoneDto } from './dto/select-zone.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -37,6 +38,22 @@ export class DevicesController {
   @Post(':id/revoke')
   revoke(@Param('id') id: string) {
     return this.service.revoke(id);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('device.manage')
+  @AuditAction('device.update')
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateDeviceDto) {
+    return this.service.update(id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermissions('device.manage')
+  @AuditAction('device.delete')
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.service.delete(id);
   }
 
   // Mobil ilova shu endpoint orqali kiradi (staff JWT emas, qurilma kaliti)

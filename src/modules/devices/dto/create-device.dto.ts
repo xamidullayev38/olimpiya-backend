@@ -7,5 +7,10 @@ export class CreateDeviceDto {
 
   @IsOptional()
   @IsString()
+  @Length(4, 128)
+  deviceKey?: string;
+
+  @IsOptional()
+  @IsString()
   zoneId?: string;
 }

@@ -9,7 +9,10 @@ export class ZoneRepository {
   async findById(id: string) {
     return this.prisma.zone.findUnique({
       where: { id },
-      include: { accessRules: { include: { accreditationType: true } } },
+      include: {
+        accessRules: { include: { accreditationType: true } },
+        devices: true,
+      },
     });
   }
 
@@ -20,7 +23,10 @@ export class ZoneRepository {
   async findMany(where?: Prisma.ZoneWhereInput) {
     return this.prisma.zone.findMany({
       where,
-      include: { accessRules: { include: { accreditationType: true } } },
+      include: {
+        accessRules: { include: { accreditationType: true } },
+        devices: true,
+      },
       orderBy: { name: 'asc' },
     });
   }
