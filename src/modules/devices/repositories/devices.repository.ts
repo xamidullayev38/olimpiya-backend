@@ -39,4 +39,8 @@ export class DeviceRepository {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async delete(id: string): Promise<Device> {
+    return this.prisma.device.delete({ where: { id } });
+  }
 }
