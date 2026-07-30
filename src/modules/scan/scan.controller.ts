@@ -6,6 +6,7 @@ import { ScanMealDto } from './dto/scan-meal.dto';
 import { DeviceAuthGuard } from '../../common/guards/device-auth.guard';
 import { CurrentDevice, AuthenticatedDevice } from '../../common/decorators/device.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 // Skaner qurilmalari uchun MUSTAQIL autentifikatsiya (DeviceAuthGuard) - staff JWT bilan aralashtirilmaydi.
 // @Public() global JwtAuthGuard'ni chetlab o'tadi (chunki bu yerda "Authorization: Bearer" emas,
@@ -32,5 +33,13 @@ export class ScanController {
   @Get('recent')
   recent(@CurrentDevice() device: AuthenticatedDevice) {
     return this.service.getRecentScans(device.deviceId);
+  }
+
+  // Admin panel uchun faqat token haqiqiyligini tekshirish
+  @Public() // Because we'll check token inside manually or use JwtAuthGuard at method level if needed, but let's just use JwtAuthGuard
+  @UseGuards(JwtAuthGuard)
+  @Post('verify')
+  verifyToken(@Body('qrToken') qrToken: string) {
+    return this.service.verifyQrTokenForAdmin(qrToken);
   }
 }

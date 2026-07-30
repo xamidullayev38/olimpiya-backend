@@ -344,4 +344,34 @@ export class ScanService {
 
     return combined;
   }
+
+  // Admin panel uchun
+  async verifyQrTokenForAdmin(qrToken: string) {
+    try {
+      const payload = await this.qrTokenService.verify(qrToken);
+      const participant = await this.participantsRepo.findById(payload.pid);
+      if (!participant) {
+        return { valid: false, reason: 'Ishtirokchi topilmadi' };
+      }
+      
+      if (participant.qrTokenId !== payload.tid || participant.qrTokenVersion !== payload.v) {
+        return { valid: false, reason: 'QR kod eskirgan yoki bekor qilingan' };
+      }
+
+      return {
+        valid: participant.badgeStatus === BadgeStatus.ACTIVE,
+        reason: participant.badgeStatus !== BadgeStatus.ACTIVE ? `Badge holati: ${participant.badgeStatus}` : null,
+        participant: {
+          id: participant.id,
+          fullName: `${participant.lastName} ${participant.firstName}`,
+          category: participant.accreditationType?.name,
+          categoryColor: participant.accreditationType?.color,
+          organization: participant.organization,
+          photoUrl: participant.photoUrl,
+        }
+      };
+    } catch {
+      return { valid: false, reason: 'QR kod yaroqsiz yoki buzilgan' };
+    }
+  }
 }
