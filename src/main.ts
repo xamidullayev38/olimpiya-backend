@@ -29,7 +29,7 @@ async function bootstrap() {
   );
 
   // ---------------------------------------------------------------
-  // 2) CORS - whitelist qilingan originlar + vercel support
+  // 2) CORS - whitelist qilingan originlar + vercel/saidly support
   // ---------------------------------------------------------------
   const allowedOrigins = (config.get<string>('CORS_ORIGINS') || '')
     .split(',')
@@ -40,17 +40,29 @@ async function bootstrap() {
     origin: (origin, callback) => {
       if (
         !origin ||
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes('*') ||
         allowedOrigins.includes(origin) ||
-        (!isProd && (allowedOrigins.includes('*') || allowedOrigins.length === 0))
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.saidly.me') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
       ) {
-        callback(null, true);
-      } else {
-        callback(null, false);
+        return callback(null, true);
       }
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+      'X-Device-Key',
+      'Range',
+    ],
+    exposedHeaders: ['Content-Range', 'Content-Disposition'],
   });
 
   app.use(compression());

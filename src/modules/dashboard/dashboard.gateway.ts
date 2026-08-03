@@ -18,7 +18,7 @@ import { DashboardService } from './dashboard.service';
 @WebSocketGateway({
   namespace: 'dashboard',
   path: '/api/v1/socket.io',
-  cors: false, // production'da Nest CORS bilan bir xil whitelist qo'llaniladi (adapter darajasida sozlanadi)
+  cors: { origin: true, credentials: true },
 })
 export class DashboardGateway implements OnGatewayConnection {
   @WebSocketServer()
