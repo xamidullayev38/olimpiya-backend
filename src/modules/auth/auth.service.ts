@@ -57,7 +57,7 @@ export class AuthService {
       throw new UnauthorizedException(genericError);
     }
 
-    await this.usersRepo.update(user.id, { failedLoginCount: 0, lockedUntil: null });
+    await this.usersRepo.update(user.id, { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() });
 
     const roles = user.roles.map((r) => r.role.name);
     const permissions = Array.from(
@@ -74,6 +74,7 @@ export class AuthService {
         fullName: user.fullName,
         roles,
         mustChangePassword: user.mustChangePassword,
+        assignedZone: user.assignedZone ? { id: user.assignedZone.id, name: user.assignedZone.name, code: user.assignedZone.code } : null,
       },
     };
   }
@@ -242,6 +243,8 @@ export class AuthService {
       roles,
       permissions,
       mustChangePassword: user.mustChangePassword,
+      lastLoginAt: user.lastLoginAt,
+      assignedZone: user.assignedZone ? { id: user.assignedZone.id, name: user.assignedZone.name, code: user.assignedZone.code } : null,
       createdAt: user.createdAt,
     };
   }

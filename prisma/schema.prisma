@@ -56,10 +56,14 @@ model SystemUser {
   isActive          Boolean   @default(true)
   failedLoginCount  Int       @default(0)
   lockedUntil       DateTime?
+  lastLoginAt       DateTime?
   mustChangePassword Boolean  @default(false)
   passwordChangedAt DateTime  @default(now())
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  assignedZoneId    String?
+  assignedZone      Zone?        @relation("UserAssignedZone", fields: [assignedZoneId], references: [id], onDelete: SetNull)
 
   roles             UserRole[]
   refreshTokens     RefreshToken[]
@@ -173,6 +177,7 @@ model Zone {
   accessRules       ZoneAccessRule[]
   accessLogs        AccessLog[]
   devices           Device[]
+  assignedUsers     SystemUser[]     @relation("UserAssignedZone")
 
   @@map("zones")
 }

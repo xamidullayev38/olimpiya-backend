@@ -9,14 +9,20 @@ export class UsersRepository {
   async findById(id: string) {
     return this.prisma.systemUser.findUnique({
       where: { id },
-      include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } } },
+      include: {
+        roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+        assignedZone: { select: { id: true, name: true, code: true } },
+      },
     });
   }
 
   async findByUsername(username: string) {
     return this.prisma.systemUser.findUnique({
       where: { username },
-      include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } } },
+      include: {
+        roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
+        assignedZone: { select: { id: true, name: true, code: true } },
+      },
     });
   }
 
@@ -30,6 +36,9 @@ export class UsersRepository {
         email: true,
         isActive: true,
         mustChangePassword: true,
+        lastLoginAt: true,
+        assignedZoneId: true,
+        assignedZone: { select: { id: true, name: true, code: true } },
         createdAt: true,
         roles: { select: { role: { select: { id: true, name: true, description: true } } } },
       },

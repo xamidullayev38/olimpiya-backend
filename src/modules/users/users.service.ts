@@ -26,6 +26,7 @@ export class UsersService {
       email: dto.email,
       passwordHash,
       mustChangePassword: true,
+      assignedZone: dto.assignedZoneId ? { connect: { id: dto.assignedZoneId } } : undefined,
       roles: { create: dto.roleIds.map((roleId) => ({ roleId })) },
     });
 
@@ -50,6 +51,7 @@ export class UsersService {
       fullName: dto.fullName,
       email: dto.email,
       isActive: dto.isActive,
+      assignedZone: dto.assignedZoneId ? { connect: { id: dto.assignedZoneId } } : dto.assignedZoneId === '' ? { disconnect: true } : undefined,
       ...(dto.roleIds
         ? {
             roles: {

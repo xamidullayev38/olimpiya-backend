@@ -18,4 +18,8 @@ export class UpdateUserDto {
   @IsArray()
   @IsString({ each: true })
   roleIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  assignedZoneId?: string;
 }

@@ -24,4 +24,8 @@ export class CreateUserDto {
   @ArrayNotEmpty()
   @IsString({ each: true })
   roleIds: string[];
+
+  @IsOptional()
+  @IsString()
+  assignedZoneId?: string;
 }
