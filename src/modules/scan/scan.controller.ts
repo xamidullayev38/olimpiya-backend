@@ -12,31 +12,34 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 // @Public() global JwtAuthGuard'ni chetlab o'tadi (chunki bu yerda "Authorization: Bearer" emas,
 // "Authorization: Device <token>" ishlatiladi); DeviceAuthGuard esa haqiqiy autentifikatsiyani bajaradi.
 // Har bir qurilma uchun cheklovli throttle (NFT-1: 200+ parallel qurilma, lekin bitta qurilma spam qilmasin).
-@Public()
-@UseGuards(DeviceAuthGuard)
 @Controller({ path: 'scan', version: '1' })
 export class ScanController {
   constructor(private service: ScanService) {}
 
+  @Public()
+  @UseGuards(DeviceAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 1000 } })
   @Post('access')
   scanAccess(@Body() dto: ScanAccessDto, @CurrentDevice() device: AuthenticatedDevice) {
     return this.service.scanAccess(dto, { deviceId: device.deviceId });
   }
 
+  @Public()
+  @UseGuards(DeviceAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 1000 } })
   @Post('meal')
   scanMeal(@Body() dto: ScanMealDto, @CurrentDevice() device: AuthenticatedDevice) {
     return this.service.scanMeal(dto, { deviceId: device.deviceId });
   }
 
+  @Public()
+  @UseGuards(DeviceAuthGuard)
   @Get('recent')
   recent(@CurrentDevice() device: AuthenticatedDevice) {
     return this.service.getRecentScans(device.deviceId);
   }
 
   // Admin panel uchun faqat token haqiqiyligini tekshirish
-  @Public() // Because we'll check token inside manually or use JwtAuthGuard at method level if needed, but let's just use JwtAuthGuard
   @UseGuards(JwtAuthGuard)
   @Post('verify')
   verifyToken(@Body('qrToken') qrToken: string) {

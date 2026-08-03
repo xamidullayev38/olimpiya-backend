@@ -40,11 +40,8 @@ async function bootstrap() {
     origin: (origin, callback) => {
       if (
         !origin ||
-        allowedOrigins.length === 0 ||
-        allowedOrigins.includes('*') ||
         allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        origin.includes('localhost')
+        (!isProd && (allowedOrigins.includes('*') || allowedOrigins.length === 0))
       ) {
         callback(null, true);
       } else {

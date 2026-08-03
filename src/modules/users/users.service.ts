@@ -102,6 +102,6 @@ export class UsersService {
 
   private sanitize(user: any) {
     const { passwordHash, failedLoginCount, lockedUntil, ...rest } = user;
-    return { ...rest, roles: user.roles?.map((r: any) => r.role?.name || r.role) };
+    return rest;
   }
 }
