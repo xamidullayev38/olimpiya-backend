@@ -59,9 +59,15 @@ export class AuthService {
 
     await this.usersRepo.update(user.id, { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() });
 
-    const roles = user.roles.map((r) => r.role.name);
+    const roles = (user.roles || []).map((r) => r.role?.name).filter((name): name is string => Boolean(name));
     const permissions = Array.from(
-      new Set(user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+      new Set(
+        (user.roles || []).flatMap((ur) =>
+          (ur.role?.permissions || [])
+            .map((rp) => rp.permission?.code)
+            .filter((code): code is string => Boolean(code)),
+        ),
+      ),
     );
 
     const tokens = await this.issueTokens(user.id, user.username, roles, permissions, meta);
@@ -149,9 +155,15 @@ export class AuthService {
       throw new ForbiddenException('Hisob faol emas');
     }
 
-    const roles = existing.user.roles.map((r) => r.role.name);
+    const roles = (existing.user.roles || []).map((r) => r.role?.name).filter((name): name is string => Boolean(name));
     const permissions = Array.from(
-      new Set(existing.user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+      new Set(
+        (existing.user.roles || []).flatMap((ur) =>
+          (ur.role?.permissions || [])
+            .map((rp) => rp.permission?.code)
+            .filter((code): code is string => Boolean(code)),
+        ),
+      ),
     );
 
     const tokens = await this.issueTokens(
@@ -204,9 +216,15 @@ export class AuthService {
 
     await this.revokeAllUserTokens(userId);
 
-    const roles = user.roles.map((r) => r.role.name);
+    const roles = (user.roles || []).map((r) => r.role?.name).filter((name): name is string => Boolean(name));
     const permissions = Array.from(
-      new Set(user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+      new Set(
+        (user.roles || []).flatMap((ur) =>
+          (ur.role?.permissions || [])
+            .map((rp) => rp.permission?.code)
+            .filter((code): code is string => Boolean(code)),
+        ),
+      ),
     );
 
     const tokens = await this.issueTokens(user.id, user.username, roles, permissions, {});
@@ -230,9 +248,15 @@ export class AuthService {
     const user = await this.usersRepo.findById(userId);
     if (!user) throw new UnauthorizedException('Foydalanuvchi topilmadi');
 
-    const roles = user.roles.map((r) => r.role.name);
+    const roles = (user.roles || []).map((r) => r.role?.name).filter((name): name is string => Boolean(name));
     const permissions = Array.from(
-      new Set(user.roles.flatMap((ur) => ur.role.permissions.map((rp) => rp.permission.code))),
+      new Set(
+        (user.roles || []).flatMap((ur) =>
+          (ur.role?.permissions || [])
+            .map((rp) => rp.permission?.code)
+            .filter((code): code is string => Boolean(code)),
+        ),
+      ),
     );
 
     return {
