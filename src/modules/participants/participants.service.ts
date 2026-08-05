@@ -10,6 +10,7 @@ import { AccreditationTypeRepository } from '../accreditation-types/repositories
 import { AccessLogRepository } from '../access-logs/repositories/access-logs.repository';
 import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repository';
 import { PrismaService } from '../../prisma/prisma.service';
+import { QrTokenService } from '../badges/qr-token.service';
 
 interface ImportRowResult {
   row: number;
@@ -28,6 +29,7 @@ export class ParticipantsService {
     private importParser: ParticipantImportParserService,
     private config: ConfigService,
     private prisma: PrismaService,
+    private qrTokenService: QrTokenService,
   ) {}
 
   private get pinflSecret(): string {
@@ -61,7 +63,7 @@ export class ParticipantsService {
 
     const { pinflEncrypted, pinflLast4 } = this.encryptPinfl(pinfl);
 
-    return this.participantsRepo.create({
+    const participant = await this.participantsRepo.create({
       ...rest,
       birthDate: birthDate ? new Date(birthDate) : undefined,
       pinflEncrypted,
@@ -69,6 +71,9 @@ export class ParticipantsService {
       createdBy: createdById ? { connect: { id: createdById } } : undefined,
       accreditationType: { connect: { id: accreditationType.id } },
     });
+
+    const qrToken = await this.qrTokenService.sign({ pid: participant.id, tid: participant.qrTokenId, v: participant.qrTokenVersion });
+    return { ...participant, qrToken };
   }
 
   async findAll(query: QueryParticipantDto) {
@@ -106,13 +111,21 @@ export class ParticipantsService {
       this.participantsRepo.count(where),
     ]);
 
-    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    const itemsWithQrTokens = await Promise.all(
+      items.map(async (p) => {
+        const qrToken = await this.qrTokenService.sign({ pid: p.id, tid: p.qrTokenId, v: p.qrTokenVersion });
+        return { ...p, qrToken };
+      })
+    );
+
+    return { items: itemsWithQrTokens, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
   async findOne(id: string) {
     const participant = await this.participantsRepo.findById(id);
     if (!participant) throw new NotFoundException('Ishtirokchi topilmadi');
-    return participant;
+    const qrToken = await this.qrTokenService.sign({ pid: participant.id, tid: participant.qrTokenId, v: participant.qrTokenVersion });
+    return { ...participant, qrToken };
   }
 
   // FT-25: ishtirokchi bo'yicha to'liq tarix
@@ -126,7 +139,7 @@ export class ParticipantsService {
   }
 
   async update(id: string, dto: UpdateParticipantDto) {
-    await this.findOne(id);
+    const participant = await this.findOne(id);
     const { pinfl, birthDate, accreditationTypeId, ...rest } = dto;
     const pinflFields = pinfl ? this.encryptPinfl(pinfl) : {};
 

@@ -8,12 +8,14 @@ import { ParticipantsRepository } from './repositories/participants.repository';
 import { AccreditationTypeRepository } from '../accreditation-types/repositories/accreditation-types.repository';
 import { AccessLogRepository } from '../access-logs/repositories/access-logs.repository';
 import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repository';
+import { BadgesModule } from '../badges/badges.module';
 
 @Module({
   imports: [
     MulterModule.register({
       storage: memoryStorage(),
     }),
+    BadgesModule,
   ],
   providers: [
     ParticipantsService,
