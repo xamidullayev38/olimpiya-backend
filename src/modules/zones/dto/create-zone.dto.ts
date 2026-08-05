@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Length, IsArray } from 'class-validator';
 
 export class CreateZoneDto {
   @IsString()
@@ -16,4 +16,9 @@ export class CreateZoneDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  allowedAccreditationTypeIds?: string[];
 }
