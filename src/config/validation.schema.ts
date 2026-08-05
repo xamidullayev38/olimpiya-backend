@@ -25,7 +25,7 @@ export const validationSchema = Joi.object({
   QR_TOKEN_EXPIRES_IN: Joi.string().default('730d'),
 
   DEVICE_TOKEN_SECRET: Joi.string().min(32).required(),
-  DEVICE_TOKEN_EXPIRES_IN: Joi.string().default('12h'),
+  DEVICE_TOKEN_EXPIRES_IN: Joi.string().default('365d'),
 
   OFFLINE_PACKAGE_SECRET: Joi.string().min(32).optional(),
   PINFL_ENCRYPTION_SECRET: Joi.string().min(32).required(),

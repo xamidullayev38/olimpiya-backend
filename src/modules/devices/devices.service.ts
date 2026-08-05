@@ -82,7 +82,7 @@ export class DevicesService {
       { sub: device.id },
       {
         secret: this.config.get<string>('DEVICE_TOKEN_SECRET'),
-        expiresIn: this.config.get<string>('DEVICE_TOKEN_EXPIRES_IN') || '12h',
+        expiresIn: this.config.get<string>('DEVICE_TOKEN_EXPIRES_IN') || '365d',
       },
     );
 
