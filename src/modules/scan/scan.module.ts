@@ -10,6 +10,7 @@ import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repositor
 import { DeviceRepository } from '../devices/repositories/devices.repository';
 import { ParticipantsRepository } from '../participants/repositories/participants.repository';
 import { MealScheduleRepository } from '../meal-schedule/repositories/meal-schedule.repository';
+import { ZoneRepository } from '../zones/repositories/zones.repository';
 
 @Module({
   imports: [JwtModule.register({}), BadgesModule, MealScheduleModule, DashboardModule],
@@ -20,6 +21,7 @@ import { MealScheduleRepository } from '../meal-schedule/repositories/meal-sched
     DeviceRepository,
     ParticipantsRepository,
     MealScheduleRepository,
+    ZoneRepository,
   ],
   controllers: [ScanController],
   exports: [ScanService],

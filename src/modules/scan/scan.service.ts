@@ -9,6 +9,7 @@ import { MealLogRepository } from '../meal-logs/repositories/meal-logs.repositor
 import { DeviceRepository } from '../devices/repositories/devices.repository';
 import { ParticipantsRepository } from '../participants/repositories/participants.repository';
 import { MealScheduleRepository } from '../meal-schedule/repositories/meal-schedule.repository';
+import { ZoneRepository } from '../zones/repositories/zones.repository';
 import { DashboardGateway } from '../dashboard/dashboard.gateway';
 
 interface ScanContext {
@@ -26,6 +27,7 @@ export class ScanService {
     private qrTokenService: QrTokenService,
     private mealScheduleService: MealScheduleService,
     private dashboardGateway: DashboardGateway,
+    private zoneRepo: ZoneRepository,
   ) {}
 
   // ------------------------------------------------------------------
@@ -75,7 +77,9 @@ export class ScanService {
           participant.badgeStatus === BadgeStatus.BLOCKED ? 'Badge bloklangan' : 'Badge muddati tugagan');
       }
 
-      const allowed = participant.accreditationType.zoneAccess.some((z) => z.zoneId === device.currentZoneId);
+      const zoneHasRules = await this.zoneRepo.hasAccessRules(device.currentZoneId);
+      const allowed = !zoneHasRules || participant.accreditationType.zoneAccess.some((z) => z.zoneId === device.currentZoneId);
+
       if (!allowed) {
         return this.persistAccessLog(participant.id, device.currentZoneId, dto, ctx, scannedAt, false, 'Bu zonaga ruxsat yo\'q');
       }

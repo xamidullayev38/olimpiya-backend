@@ -20,6 +20,11 @@ export class ZoneRepository {
     return this.prisma.zone.findUnique({ where: { code } });
   }
 
+  async hasAccessRules(zoneId: string): Promise<boolean> {
+    const count = await this.prisma.zoneAccessRule.count({ where: { zoneId } });
+    return count > 0;
+  }
+
   async findMany(where?: Prisma.ZoneWhereInput) {
     return this.prisma.zone.findMany({
       where,
