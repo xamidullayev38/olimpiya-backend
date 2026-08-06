@@ -2,7 +2,7 @@
 set -e
 
 echo "==> Running Prisma Database Sync..."
-npx --yes prisma db push --skip-generate
+npx prisma db push --accept-data-loss --skip-generate
 
 echo "==> Starting application..."
 exec "$@"
