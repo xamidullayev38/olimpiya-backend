@@ -42,4 +42,11 @@ export class AccessLogRepository {
       take: limit,
     });
   }
+
+  async findLastGranted(participantId: string) {
+    return this.prisma.accessLog.findFirst({
+      where: { participantId, result: 'GRANTED' },
+      orderBy: { scannedAt: 'desc' },
+    });
+  }
 }

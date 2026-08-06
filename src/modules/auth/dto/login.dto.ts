@@ -1,4 +1,4 @@
-import { IsString, Length, Matches } from 'class-validator';
+import { IsString, Length, Matches, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsString()
@@ -8,4 +8,12 @@ export class LoginDto {
   @IsString()
   @Length(8, 128)
   password: string;
+
+  @IsString()
+  @IsOptional()
+  deviceId?: string;
+
+  @IsString()
+  @IsOptional()
+  deviceName?: string;
 }

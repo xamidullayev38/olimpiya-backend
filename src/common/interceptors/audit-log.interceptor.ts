@@ -42,13 +42,14 @@ export class AuditLogInterceptor implements NestInterceptor {
             entityId: result?.id ?? request.params?.id ?? null,
             ipAddress: request.ip,
             userAgent: request.headers['user-agent'],
-            metadata: {
+            metadata: JSON.parse(JSON.stringify({
               method: request.method,
               path: request.originalUrl,
               body: this.sanitizeBody(request.body),
-            },
+            })),
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error('AuditLog yozishda xatolik:', error);
             // Audit log yozilmasa ham asosiy so'rov muvaffaqiyatli yakunlangan bo'lishi kerak
           });
       }),

@@ -9,7 +9,7 @@ export class DeviceRepository {
   async findById(id: string) {
     return this.prisma.device.findUnique({
       where: { id },
-      include: { currentZone: true },
+      include: { currentZone: true, assignedToUser: true },
     });
   }
 
@@ -35,7 +35,14 @@ export class DeviceRepository {
   async findMany(where?: Prisma.DeviceWhereInput) {
     return this.prisma.device.findMany({
       where,
-      include: { currentZone: true, assignedToUser: true },
+      include: { 
+        currentZone: true, 
+        assignedToUser: {
+          include: {
+            assignedZone: true
+          }
+        } 
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

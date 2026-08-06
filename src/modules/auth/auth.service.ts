@@ -72,6 +72,26 @@ export class AuthService {
 
     const tokens = await this.issueTokens(user.id, user.username, roles, permissions, meta);
 
+    if (dto.deviceId) {
+      await this.prisma.device.upsert({
+        where: { id: dto.deviceId },
+        update: {
+          name: dto.deviceName || 'Mobil Qurilma',
+          assignedToUserId: user.id,
+          lastSeenAt: new Date(),
+          lastSeenIp: meta.ip,
+        },
+        create: {
+          id: dto.deviceId,
+          name: dto.deviceName || 'Mobil Qurilma',
+          deviceKeyHash: await argon2.hash(dto.deviceId),
+          assignedToUserId: user.id,
+          lastSeenAt: new Date(),
+          lastSeenIp: meta.ip,
+        },
+      });
+    }
+
     return {
       ...tokens,
       user: {

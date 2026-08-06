@@ -44,7 +44,7 @@ export class SyncService {
 
     return {
       generatedAt: new Date(),
-      currentZoneId: device?.currentZoneId ?? null,
+      currentZoneId: (device?.assignedToUser?.assignedZoneId || device?.currentZoneId) ?? null,
       participants: participants.map((p) => ({
         id: p.id,
         firstName: p.firstName,

@@ -43,14 +43,15 @@ export class ScanService {
     }
 
     const device = await this.deviceRepo.findById(ctx.deviceId);
-    if (!device || !device.currentZoneId) {
+    const deviceZoneId = device?.assignedToUser?.assignedZoneId || device?.currentZoneId;
+    if (!device || !deviceZoneId) {
       return this.denyAccessWithoutParticipant(
         null,
-        device?.currentZoneId ?? null,
+        deviceZoneId ?? null,
         dto,
         ctx,
         scannedAt,
-        'Qurilma hech qanday zonaga biriktirilmagan',
+        'Qurilma (yoki foydalanuvchi) hech qanday zonaga biriktirilmagan',
       );
     }
 
@@ -64,7 +65,7 @@ export class ScanService {
       if (!participant || participant.qrTokenId !== payload.tid || participant.qrTokenVersion !== payload.v) {
         return this.denyAccessWithoutParticipant(
           participantId,
-          device.currentZoneId,
+          deviceZoneId,
           dto,
           ctx,
           scannedAt,
@@ -73,23 +74,36 @@ export class ScanService {
       }
 
       if (participant.badgeStatus !== BadgeStatus.ACTIVE) {
-        return this.persistAccessLog(participant.id, device.currentZoneId, dto, ctx, scannedAt, false,
+        return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, false,
           participant.badgeStatus === BadgeStatus.BLOCKED ? 'Badge bloklangan' : 'Badge muddati tugagan');
       }
 
-      const zoneHasRules = await this.zoneRepo.hasAccessRules(device.currentZoneId);
-      const allowed = !zoneHasRules || participant.accreditationType.zoneAccess.some((z) => z.zoneId === device.currentZoneId);
+      const zoneHasRules = await this.zoneRepo.hasAccessRules(deviceZoneId);
+      const allowed = !zoneHasRules || participant.accreditationType.zoneAccess.some((z) => z.zoneId === deviceZoneId);
 
       if (!allowed) {
-        return this.persistAccessLog(participant.id, device.currentZoneId, dto, ctx, scannedAt, false, 'Bu zonaga ruxsat yo\'q');
+        return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, false, 'Bu zonaga ruxsat yo\'q');
+      }
+
+      // Check double entry
+      const lastAccessLog = await this.accessLogRepo.findLastGranted(participant.id);
+      if (lastAccessLog) {
+        if (dto.direction === 'IN' && lastAccessLog.direction === 'IN') {
+          return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, false, 'Ishtirokchi allaqachon ichkarida. Avval chiqish (OUT) qiling.');
+        }
+        if (dto.direction === 'OUT' && lastAccessLog.direction === 'OUT') {
+          return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, false, 'Ishtirokchi avval ichkariga kirmagan.');
+        }
+      } else if (dto.direction === 'OUT') {
+        return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, false, 'Ishtirokchi avval ichkariga kirmagan.');
       }
 
       // Ruxsat berildi
-      return this.persistAccessLog(participant.id, device.currentZoneId, dto, ctx, scannedAt, true, null);
+      return this.persistAccessLog(participant.id, deviceZoneId, dto, ctx, scannedAt, true, null);
     } catch {
       return this.denyAccessWithoutParticipant(
-        null,
-        device.currentZoneId,
+        participantId,
+        deviceZoneId,
         dto,
         ctx,
         scannedAt,
