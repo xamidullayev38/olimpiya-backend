@@ -9,21 +9,21 @@ export class AccessLogRepository {
   async create(data: Prisma.AccessLogCreateInput): Promise<AccessLog> {
     return this.prisma.accessLog.create({
       data,
-      include: { zone: true, participant: { include: { accreditationType: true } } },
+      include: { zone: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
     });
   }
 
   async findByClientEventId(clientEventId: string) {
     return this.prisma.accessLog.findUnique({
       where: { clientEventId },
-      include: { zone: true, participant: { include: { accreditationType: true } } },
+      include: { zone: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
     });
   }
 
   async findMany(where: Prisma.AccessLogWhereInput, skip?: number, take?: number) {
     return this.prisma.accessLog.findMany({
       where,
-      include: { zone: true, participant: { include: { accreditationType: true } } },
+      include: { zone: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
       orderBy: { scannedAt: 'desc' },
       skip,
       take,
@@ -37,7 +37,7 @@ export class AccessLogRepository {
   async findRecentByDevice(deviceId: string, limit: number = 10) {
     return this.prisma.accessLog.findMany({
       where: { deviceId },
-      include: { zone: true, participant: { include: { accreditationType: true } } },
+      include: { zone: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
       orderBy: { scannedAt: 'desc' },
       take: limit,
     });
@@ -47,6 +47,12 @@ export class AccessLogRepository {
     return this.prisma.accessLog.findFirst({
       where: { participantId, result: 'GRANTED' },
       orderBy: { scannedAt: 'desc' },
+    });
+  }
+
+  async deleteMany(ids: string[]): Promise<Prisma.BatchPayload> {
+    return this.prisma.accessLog.deleteMany({
+      where: { id: { in: ids } },
     });
   }
 }

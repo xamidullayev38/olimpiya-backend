@@ -9,14 +9,14 @@ export class MealLogRepository {
   async create(data: Prisma.MealLogCreateInput): Promise<MealLog> {
     return this.prisma.mealLog.create({
       data,
-      include: { mealSchedule: true, participant: { include: { accreditationType: true } } },
+      include: { mealSchedule: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
     });
   }
 
   async findByClientEventId(clientEventId: string) {
     return this.prisma.mealLog.findUnique({
       where: { clientEventId },
-      include: { mealSchedule: true, participant: { include: { accreditationType: true } } },
+      include: { mealSchedule: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
     });
   }
 
@@ -30,7 +30,7 @@ export class MealLogRepository {
   async findMany(where: Prisma.MealLogWhereInput, skip?: number, take?: number) {
     return this.prisma.mealLog.findMany({
       where,
-      include: { mealSchedule: true, participant: { include: { accreditationType: true } } },
+      include: { mealSchedule: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
       orderBy: { scannedAt: 'desc' },
       skip,
       take,
@@ -44,9 +44,15 @@ export class MealLogRepository {
   async findRecentByDevice(deviceId: string, limit: number = 10) {
     return this.prisma.mealLog.findMany({
       where: { deviceId },
-      include: { mealSchedule: true, participant: { include: { accreditationType: true } } },
+      include: { mealSchedule: true, participant: { include: { accreditationType: true } }, device: { select: { name: true } } },
       orderBy: { scannedAt: 'desc' },
       take: limit,
+    });
+  }
+
+  async deleteMany(ids: string[]): Promise<Prisma.BatchPayload> {
+    return this.prisma.mealLog.deleteMany({
+      where: { id: { in: ids } },
     });
   }
 }

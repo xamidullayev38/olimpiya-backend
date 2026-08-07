@@ -104,4 +104,8 @@ export class AccessLogsService {
       doc.end();
     });
   }
+
+  async deleteMany(ids: string[]) {
+    return this.accessLogRepo.deleteMany(ids);
+  }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards, Delete } from '@nestjs/common';
 import { Response } from 'express';
 import { MealLogsService, MealLogQuery } from './meal-logs.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -41,5 +41,12 @@ export class MealLogsController {
       'Content-Disposition': 'attachment; filename="meal-logs.pdf"',
     });
     res.send(buffer);
+  }
+
+  @RequirePermissions('report.export')
+  @Delete()
+  deleteMany(@Query('ids') ids: string) {
+    const idArray = ids ? ids.split(',') : [];
+    return this.service.deleteMany(idArray);
   }
 }

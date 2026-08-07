@@ -113,4 +113,8 @@ export class MealLogsService {
       doc.end();
     });
   }
+
+  async deleteMany(ids: string[]) {
+    return this.mealLogRepo.deleteMany(ids);
+  }
 }

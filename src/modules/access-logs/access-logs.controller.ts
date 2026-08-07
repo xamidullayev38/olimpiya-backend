@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards, Delete } from '@nestjs/common';
 import { Response } from 'express';
 import { AccessLogsService, AccessLogQuery } from './access-logs.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -41,5 +41,12 @@ export class AccessLogsController {
       'Content-Disposition': 'attachment; filename="access-logs.pdf"',
     });
     res.send(buffer);
+  }
+
+  @RequirePermissions('report.export') // We can use a different permission if needed, but export or write permission works
+  @Delete()
+  deleteMany(@Query('ids') ids: string) {
+    const idArray = ids ? ids.split(',') : [];
+    return this.service.deleteMany(idArray);
   }
 }
